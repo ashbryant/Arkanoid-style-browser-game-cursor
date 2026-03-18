@@ -17,7 +17,7 @@
 // =====================================================
 
 import {
-  CANVAS_W,
+  CANVAS_W, CANVAS_H,
   BALL_SPEED_STEP, BALL_SPEED_MAX, BALL_SPEED_INIT,
   POWERUP_TYPES,
 } from './constants.js'
@@ -178,7 +178,9 @@ function updateBall(gs, ball, ballIdx, input, callbacks) {
     // Ball waiting on paddle — launch on fire input
     if (input.fire) {
       ball.launched = true
-      input.fire = false   // consume the fire event
+      // Don't clear input.fire here — let the key-up / timeout handle it.
+      // Clearing it in the loop was causing missed signals when the frame
+      // ran faster than the consuming logic expected.
     }
     return
   }

@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { CANVAS_W, CANVAS_H } from '../game/constants.js'
 import { getLevel } from '../game/levels.js'
 import { buildBricks } from '../game/bricks.js'
@@ -72,13 +72,16 @@ const isPaused    = ref(false)
 const isTransitioning = ref(false)
 const isGameOver  = ref(false)
 
-// ---- Input state (mutable plain object, read by game loop each frame) ----
-const input = reactive({
+// ---- Input state — plain object, NOT reactive ----
+// The template never reads these values, so Vue reactivity is unnecessary
+// and adds overhead. A plain object is read directly by the game loop each
+// frame via closure, ensuring the latest values are always seen.
+const input = {
   left:     false,
   right:    false,
   fire:     false,
   pointerX: null,
-})
+}
 
 // ---- Game state ----
 // gsRef.current is updated whenever the game state is replaced.
@@ -262,8 +265,10 @@ function onMouseMove(e) {
 
 function onCanvasClick() {
   resumeAudio()
+  // Set fire for 3 frames worth of time — long enough for the RAF loop
+  // to reliably read it, but short enough not to double-fire.
   input.fire = true
-  setTimeout(() => { input.fire = false }, 50)
+  setTimeout(() => { input.fire = false }, 100)
 }
 
 function onTouchStart(e) {
@@ -271,7 +276,7 @@ function onTouchStart(e) {
   if (e.touches.length > 0) {
     input.pointerX = canvasRelativeX(e.touches[0].clientX)
     input.fire = true
-    setTimeout(() => { input.fire = false }, 50)
+    setTimeout(() => { input.fire = false }, 100)
   }
 }
 
