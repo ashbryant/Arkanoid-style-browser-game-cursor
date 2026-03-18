@@ -5,7 +5,9 @@
       "Bash(npm create:*)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(npm install:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(node_modules/.bin/vitest run:*)"
     ]
   }
 }
