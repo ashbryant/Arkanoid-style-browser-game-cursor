@@ -1,59 +1,77 @@
 // =====================================================
-// WEBANOID — Hidden Cheat: Infinite Lives
+// WEBANOID — Hidden Cheats
 //
-// Secret code: type "BIGBOSS" during gameplay (case insensitive).
-// Not advertised in-game. Documented here and in README only.
+// BIGBOSS  → Infinite lives (type during gameplay)
+// WARP1-9  → Jump to level 1-9 (WARP0 = level 10)
 //
-// To disable: comment out the keydown listener registration in
-// useCheat() or remove the call to useCheat() from GameCanvas.vue.
-//
-// The cheat state lives in livesState (from lives.js) so it is
-// automatically saved through all normal game resets, unless
-// the player returns to the title screen (which resets everything).
+// Not advertised in-game. See README developer notes.
+// To disable: remove the checkCheat() call in GameCanvas.vue.
 // =====================================================
 
-const CHEAT_SEQUENCE = 'BIGBOSS'
+const INFINITE_LIVES_CODE = 'BIGBOSS'
+const LEVEL_SELECT_PREFIX  = 'WARP'
+const BUFFER_MAX           = Math.max(INFINITE_LIVES_CODE.length, LEVEL_SELECT_PREFIX.length + 1)
 
 /**
  * Create a cheat detector state object.
- * Feed keyboard characters into checkCheat() each keydown event.
  * @returns {Object}
  */
 export function createCheatDetector() {
   return {
-    buffer: '',         // growing key buffer
-    activated: false,   // true once cheat fires
-    flashTimer: 0,      // frames to show "CHEAT ON" flash
+    buffer:    '',     // rolling key buffer
+    activated: false,  // true once BIGBOSS fires (infinite lives)
+    flashTimer: 0,     // frames to show on-screen confirmation
+    flashMessage: '',  // message text shown during flash
   }
 }
 
 /**
- * Process a single key press. Returns true if the cheat sequence was just completed.
- * Keeps only the last N characters where N = sequence length.
+ * Process a single key press and check against all known cheat codes.
+ * Returns an object describing the matched cheat, or null if no match yet.
+ *
+ * Return values:
+ *   null                        — no cheat matched this key
+ *   { type: 'infinite' }        — BIGBOSS sequence completed
+ *   { type: 'level', level: N } — WARP + digit completed (N = 1-10)
  *
  * @param {Object} detector
- * @param {string} key  - e.key (e.g. 'B', 'i', 'g' etc)
- * @returns {boolean} true if the cheat was just activated this call
+ * @param {string} key  - e.key value from a keydown event
+ * @returns {{ type: string, level?: number } | null}
  */
 export function checkCheat(detector, key) {
-  // Only track letters
-  if (!/^[a-zA-Z]$/.test(key)) return false
+  // Accept letters and digits only
+  if (!/^[a-zA-Z0-9]$/.test(key)) return null
 
-  detector.buffer += key.toUpperCase()
+  // Store letters uppercased; digits as-is
+  detector.buffer += /\d/.test(key) ? key : key.toUpperCase()
 
-  // Keep buffer at most as long as the cheat sequence
-  if (detector.buffer.length > CHEAT_SEQUENCE.length) {
-    detector.buffer = detector.buffer.slice(-CHEAT_SEQUENCE.length)
+  // Rolling window — only keep the last BUFFER_MAX characters
+  if (detector.buffer.length > BUFFER_MAX) {
+    detector.buffer = detector.buffer.slice(-BUFFER_MAX)
   }
 
-  if (detector.buffer === CHEAT_SEQUENCE) {
-    detector.activated = true
-    detector.flashTimer = 180  // 3 seconds at 60fps
-    detector.buffer = ''       // reset so it can't re-trigger immediately
-    return true
+  // ---- Check BIGBOSS (infinite lives) ----
+  if (detector.buffer.endsWith(INFINITE_LIVES_CODE)) {
+    detector.activated   = true
+    detector.flashTimer  = 180
+    detector.flashMessage = '** INFINITE LIVES **'
+    detector.buffer = ''
+    return { type: 'infinite' }
   }
 
-  return false
+  // ---- Check WARP + digit (level select) ----
+  // e.g. WARP3 → level 3, WARP0 → level 10
+  const warpMatch = detector.buffer.match(new RegExp(`${LEVEL_SELECT_PREFIX}([0-9])$`))
+  if (warpMatch) {
+    const digit = parseInt(warpMatch[1])
+    const level = digit === 0 ? 10 : digit   // 0 maps to level 10
+    detector.flashTimer   = 120
+    detector.flashMessage = `** WARP TO LV${level} **`
+    detector.buffer = ''
+    return { type: 'level', level }
+  }
+
+  return null
 }
 
 /**
@@ -67,7 +85,7 @@ export function tickCheat(detector) {
 }
 
 /**
- * Check if the cheat flash message should be shown.
+ * Whether the cheat confirmation flash should currently be shown.
  * @param {Object} detector
  * @returns {boolean}
  */

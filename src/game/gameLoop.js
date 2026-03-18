@@ -93,6 +93,7 @@ function buildRenderState(gs) {
     paused:              gs.paused,
     frameCount:          gs.frameCount,
     cheatFlashTimer:     gs.cheatDetector.flashTimer,
+    cheatFlashMessage:   gs.cheatDetector.flashMessage,
     transitioning:       gs.transitioning,
     levelTitle:          gs.levelTitle,
     levelSubtitle:       gs.levelSubtitle,

@@ -241,14 +241,14 @@ export function drawPauseOverlay(ctx) {
 
 // ---- Cheat flash notification ----
 
-export function drawCheatFlash(ctx, flashTimer) {
+export function drawCheatFlash(ctx, flashTimer, flashMessage) {
   if (flashTimer <= 0) return
   const alpha = Math.min(1, flashTimer / 30)
   ctx.fillStyle = `rgba(255,0,128,${alpha * 0.15})`
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
   drawText(
     ctx,
-    '** INFINITE LIVES **',
+    flashMessage || '** CHEAT **',
     CANVAS_W / 2,
     CANVAS_H / 2,
     "10px 'Press Start 2P', monospace",
@@ -318,7 +318,7 @@ export function render(ctx, state) {
     bricks, paddle, balls, powerups,
     score, level, lives, combo,
     paused, frameCount,
-    cheatFlashTimer,
+    cheatFlashTimer, cheatFlashMessage,
     transitioning, levelTitle, levelSubtitle, transitionCountdown,
     gameOver, hiScore,
     ballOnPaddle,
@@ -352,7 +352,7 @@ export function render(ctx, state) {
     drawPauseOverlay(ctx)
   }
 
-  drawCheatFlash(ctx, cheatFlashTimer)
+  drawCheatFlash(ctx, cheatFlashTimer, cheatFlashMessage)
 
   // Tick brick flash timers (renderer owns this cosmetic state)
   bricks.forEach(b => { if (b.flashTimer > 0) b.flashTimer-- })

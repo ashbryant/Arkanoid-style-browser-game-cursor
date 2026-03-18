@@ -156,6 +156,15 @@ function finishTransition(nextLevelIndex) {
   isTransitioning.value = false
 }
 
+// ---- Cheat: jump directly to a level (0-based index) ----
+// Keeps current score and lives; shows the level transition briefly.
+
+function jumpToLevel(levelIndex) {
+  clearTimeout(transitionTimer)
+  const clampedIndex = Math.max(0, Math.min(levelIndex, 99))
+  startTransition(clampedIndex)
+}
+
 // ---- Game loop callbacks ----
 
 const callbacks = {
@@ -228,11 +237,15 @@ function onKeyDown(e) {
       break
   }
 
-  // Feed key to cheat detector
+  // Feed key to cheat detector — handles BIGBOSS (infinite lives) and WARP+digit (level select)
   if (gsRef.current) {
-    const triggered = checkCheat(gsRef.current.cheatDetector, e.key)
-    if (triggered) {
-      activateInfiniteLives(gsRef.current.livesState)
+    const result = checkCheat(gsRef.current.cheatDetector, e.key)
+    if (result) {
+      if (result.type === 'infinite') {
+        activateInfiniteLives(gsRef.current.livesState)
+      } else if (result.type === 'level') {
+        jumpToLevel(result.level - 1)  // convert 1-based level to 0-based index
+      }
       sfx.cheatActivate()
     }
   }
