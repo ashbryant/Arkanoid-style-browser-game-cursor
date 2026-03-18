@@ -8,7 +8,8 @@
       "Bash(npm test:*)",
       "Bash(curl -s http://localhost:5173)",
       "Bash(node_modules/.bin/vitest run:*)",
-      "Bash(curl -s http://localhost:5173/src/components/GameCanvas.vue)"
+      "Bash(curl -s http://localhost:5173/src/components/GameCanvas.vue)",
+      "Bash(/Users/ashbryant/Desktop/temp/Ash/webanoid-cluade/README.md:*)"
     ]
   }
 }
