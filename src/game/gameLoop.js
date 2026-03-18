@@ -276,6 +276,10 @@ function handleBallLost(gs, callbacks) {
     gs.gameOver = true
     callbacks.onGameOver()
   } else {
+    // Immediately restore a ball on the paddle. This is critical —
+    // if gs.balls stays empty for multiple frames the loop calls
+    // handleBallLost again every frame until lives hit 0 (re-entrancy bug).
+    gs.balls = [createBall(gs.paddle.x, gs.paddle.width)]
     callbacks.onBallLost()
   }
 }

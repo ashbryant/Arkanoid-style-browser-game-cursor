@@ -43,7 +43,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { CANVAS_W, CANVAS_H } from '../game/constants.js'
 import { getLevel } from '../game/levels.js'
 import { buildBricks } from '../game/bricks.js'
-import { createBall } from '../game/ball.js'
 import { createPaddle } from '../game/paddle.js'
 import { createScore } from '../game/score.js'
 import { createLives, activateInfiniteLives } from '../game/lives.js'
@@ -160,14 +159,9 @@ function finishTransition(nextLevelIndex) {
 
 const callbacks = {
   onBallLost() {
+    // Ball is already reset inside handleBallLost (gameLoop.js) to prevent
+    // re-entrancy. Just play the sound effect here.
     sfx.ballLost()
-    // Reset ball on paddle after short delay
-    setTimeout(() => {
-      const s = gsRef.current
-      if (!s || s.gameOver) return
-      const fresh = createBall(s.paddle.x, s.paddle.width)
-      s.balls = [fresh]
-    }, 600)
   },
 
   onGameOver() {
