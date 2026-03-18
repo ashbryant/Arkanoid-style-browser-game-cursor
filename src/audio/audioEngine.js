@@ -174,60 +174,40 @@ export const sfx = {
   },
 }
 
-// ---- Background music sequencer ----
-// A simple 8-bit style looping melody using Web Audio API.
+// ---- Background music — MP3 via HTMLAudioElement ----
+// Using an Audio element rather than Web Audio API nodes keeps the
+// implementation simple and lets the browser handle MP3 decoding and
+// seamless looping natively.
+//
+// Browsers require a user gesture before audio can play (autoplay policy).
+// resumeAudio() must be called first; startMusic() is then safe to call
+// from any user-initiated event handler.
 
-let musicNodes = []
-let musicTimeout = null
+const MUSIC_SRC = new URL('./arcade-beat-323176.mp3', import.meta.url).href
+
+let musicEl = null      // HTMLAudioElement, created once
 let musicPlaying = false
 
-// Notes: [frequency Hz, duration in beats]
-const MELODY = [
-  [330, 1], [392, 1], [440, 2],
-  [392, 1], [330, 1], [294, 1], [262, 1],
-  [294, 1], [330, 2], [330, 1], [294, 0.5], [294, 0.5],
-  [330, 1], [392, 1], [440, 1], [494, 1],
-  [523, 2], [440, 1], [392, 1],
-  [330, 1], [294, 1], [262, 2],
-]
-
-const BPM = 180
-const BEAT_SECS = 60 / BPM
-
-function scheduleMelody(startTime) {
-  if (!isMusicOn()) return
-  let t = startTime
-  const c = getCtx()
-
-  MELODY.forEach(([freq, beats]) => {
-    const dur = beats * BEAT_SECS
-    const osc = c.createOscillator()
-    const gain = c.createGain()
-    osc.connect(gain); gain.connect(c.destination)
-    osc.type = 'square'
-    osc.frequency.value = freq
-    gain.gain.setValueAtTime(0.08, t)
-    gain.gain.setValueAtTime(0.06, t + dur * 0.7)
-    gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.95)
-    osc.start(t)
-    osc.stop(t + dur)
-    musicNodes.push(osc)
-    t += dur
-  })
-
-  const totalDur = MELODY.reduce((s, [, b]) => s + b * BEAT_SECS, 0)
-  // Schedule next loop slightly before end to avoid gap
-  musicTimeout = setTimeout(() => {
-    if (isMusicOn()) scheduleMelody(c.currentTime)
-  }, (totalDur - 0.1) * 1000)
+/** Lazily create (or return) the shared Audio element. */
+function getMusicEl() {
+  if (!musicEl) {
+    musicEl = new Audio(MUSIC_SRC)
+    musicEl.loop   = true
+    musicEl.volume = 0.5
+  }
+  return musicEl
 }
 
 export function startMusic() {
   if (musicPlaying || !isMusicOn()) return
-  musicPlaying = true
   try {
-    const c = getCtx()
-    scheduleMelody(c.currentTime)
+    const el = getMusicEl()
+    el.play().then(() => {
+      musicPlaying = true
+    }).catch(() => {
+      // Autoplay blocked — audio will start on the next user interaction
+      musicPlaying = false
+    })
   } catch {}
 }
 
@@ -240,8 +220,7 @@ function updateMusic() {
 }
 
 export function stopMusic() {
+  if (!musicEl) return
+  musicEl.pause()
   musicPlaying = false
-  clearTimeout(musicTimeout)
-  musicNodes.forEach(n => { try { n.stop() } catch {} })
-  musicNodes = []
 }
