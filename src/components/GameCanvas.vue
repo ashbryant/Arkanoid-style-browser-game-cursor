@@ -82,8 +82,15 @@ const input = reactive({
   pointerX: null,
 })
 
-// ---- Game state (plain object mutated by game loop) ----
-let gs = null
+// ---- Game state ----
+// gsRef.current is updated whenever the game state is replaced.
+// The game loop reads gsRef.current each frame so level transitions
+// and resets work without restarting the RAF loop.
+const gsRef = { current: null }
+
+function setGs(newGs) {
+  gsRef.current = newGs
+}
 
 function buildGameState(levelIndex) {
   const level = getLevel(levelIndex)
@@ -119,13 +126,13 @@ let transitionTimer = null
 
 function startTransition(nextLevelIndex) {
   isTransitioning.value = true
-  gs.transitioning = true
-  gs.transitionCountdown = 3
+  gsRef.current.transitioning = true
+  gsRef.current.transitionCountdown = 3
 
   let countdown = 3
   const tick = () => {
     countdown--
-    gs.transitionCountdown = countdown
+    gsRef.current.transitionCountdown = countdown
     if (countdown <= 0) {
       finishTransition(nextLevelIndex)
     } else {
@@ -137,13 +144,14 @@ function startTransition(nextLevelIndex) {
 
 function finishTransition(nextLevelIndex) {
   // Carry score and lives into the new level
-  const prevScore = gs.scoreState
-  const prevLives = gs.livesState
+  const prevScore = gsRef.current.scoreState
+  const prevLives = gsRef.current.livesState
 
-  gs = buildGameState(nextLevelIndex)
-  gs.scoreState = prevScore
-  gs.livesState = prevLives
-  gs.transitioning = false
+  // Update gsRef.current — the running loop will pick up the new state next frame
+  setGs(buildGameState(nextLevelIndex))
+  gsRef.current.scoreState = prevScore
+  gsRef.current.livesState = prevLives
+  gsRef.current.transitioning = false
   isTransitioning.value = false
 }
 
@@ -154,9 +162,10 @@ const callbacks = {
     sfx.ballLost()
     // Reset ball on paddle after short delay
     setTimeout(() => {
-      if (!gs || gs.gameOver) return
-      const fresh = createBall(gs.paddle.x, gs.paddle.width)
-      gs.balls = [fresh]
+      const s = gsRef.current
+      if (!s || s.gameOver) return
+      const fresh = createBall(s.paddle.x, s.paddle.width)
+      s.balls = [fresh]
     }, 600)
   },
 
@@ -165,16 +174,17 @@ const callbacks = {
     stopMusic()
     isGameOver.value = true
     setTimeout(() => {
+      const s = gsRef.current
       emit('gameover', {
-        score: gs.scoreState.value,
-        level: gs.levelIndex + 1,
+        score: s.scoreState.value,
+        level: s.levelIndex + 1,
       })
     }, 1500)
   },
 
   onLevelClear() {
     sfx.levelClear()
-    const next = gs.levelIndex + 1
+    const next = gsRef.current.levelIndex + 1
     startTransition(next)
     emit('levelclear', { levelIndex: next })
   },
@@ -189,7 +199,7 @@ const callbacks = {
     } else {
       sfx.brickHit()
     }
-    emit('scoreupdate', gs.scoreState.value)
+    emit('scoreupdate', gsRef.current.scoreState.value)
   },
 }
 
@@ -223,10 +233,10 @@ function onKeyDown(e) {
   }
 
   // Feed key to cheat detector
-  if (gs) {
-    const triggered = checkCheat(gs.cheatDetector, e.key)
+  if (gsRef.current) {
+    const triggered = checkCheat(gsRef.current.cheatDetector, e.key)
     if (triggered) {
-      activateInfiniteLives(gs.livesState)
+      activateInfiniteLives(gsRef.current.livesState)
       sfx.cheatActivate()
     }
   }
@@ -277,8 +287,8 @@ function onTouchMove(e) {
 
 function togglePause() {
   isPaused.value = !isPaused.value
-  gs.paused = isPaused.value
-  if (gs.paused) {
+  gsRef.current.paused = isPaused.value
+  if (isPaused.value) {
     stopMusic()
   } else {
     startMusic()
@@ -288,10 +298,10 @@ function togglePause() {
 // ---- Mount / unmount ----
 
 onMounted(() => {
-  gs = buildGameState(props.levelIndex)
+  setGs(buildGameState(props.levelIndex))
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
-  startLoop(gs, canvasRef.value, input, callbacks)
+  startLoop(gsRef, canvasRef.value, input, callbacks)
   startMusic()
 })
 
@@ -306,11 +316,11 @@ onUnmounted(() => {
 // Allow parent to reset (e.g. new game)
 defineExpose({ resetGame() {
   stopLoop()
-  gs = buildGameState(0)
+  setGs(buildGameState(0))
   isGameOver.value = false
   isPaused.value = false
   isTransitioning.value = false
-  startLoop(gs, canvasRef.value, input, callbacks)
+  startLoop(gsRef, canvasRef.value, input, callbacks)
   startMusic()
 }})
 </script>

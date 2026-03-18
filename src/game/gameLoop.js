@@ -42,12 +42,15 @@ let rafHandle = null
 /**
  * Start the game loop.
  *
- * @param {Object}         gs        - game state (from GameCanvas.vue reactive ref)
+ * @param {Object}         gsRef     - wrapper: { current: gameState }
+ *                                    Use a wrapper so GameCanvas.vue can swap the
+ *                                    state object (on level transition / reset) without
+ *                                    restarting the loop — the loop always reads gsRef.current.
  * @param {HTMLCanvasElement} canvas
  * @param {Object}         input     - live input state { left, right, pointer, fire }
  * @param {Object}         callbacks - { onBallLost, onLevelClear, onGameOver }
  */
-export function startLoop(gs, canvas, input, callbacks) {
+export function startLoop(gsRef, canvas, input, callbacks) {
   const ctx = canvas.getContext('2d')
   let lastTime = performance.now()
 
@@ -58,6 +61,8 @@ export function startLoop(gs, canvas, input, callbacks) {
     const delta = Math.min(timestamp - lastTime, 33)
     lastTime = timestamp
 
+    // Always read from gsRef.current so level transitions work
+    const gs = gsRef.current
     update(gs, input, callbacks, delta)
     render(ctx, buildRenderState(gs))
   }
