@@ -9,7 +9,7 @@
 //   This gives the player directional control.
 // =====================================================
 
-import { BOUNCE_ANGLE_MAX, CANVAS_W } from './constants.js'
+import { BOUNCE_ANGLE_MAX } from './constants.js'
 
 /**
  * Calculate new ball velocity after paddle bounce.

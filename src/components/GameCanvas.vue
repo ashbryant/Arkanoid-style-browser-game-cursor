@@ -39,8 +39,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
-import { CANVAS_W, CANVAS_H, LIVES_START } from '../game/constants.js'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { CANVAS_W, CANVAS_H } from '../game/constants.js'
 import { getLevel } from '../game/levels.js'
 import { buildBricks } from '../game/bricks.js'
 import { createBall } from '../game/ball.js'
@@ -52,9 +52,7 @@ import { startLoop, stopLoop } from '../game/gameLoop.js'
 import { loadHighScores } from '../store/highScores.js'
 import {
   resumeAudio, sfx, startMusic, stopMusic,
-  isMusicOn, isSfxOn, isMuted,
-  setMasterMute, setMusicOn, setSfxOn,
-  getAudioPrefs,
+  isMuted, setMasterMute,
 } from '../audio/audioEngine.js'
 
 const emit = defineEmits([

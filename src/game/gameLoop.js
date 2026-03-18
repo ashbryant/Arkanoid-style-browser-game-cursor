@@ -17,7 +17,7 @@
 // =====================================================
 
 import {
-  CANVAS_W, CANVAS_H,
+  CANVAS_W,
   BALL_SPEED_STEP, BALL_SPEED_MAX, BALL_SPEED_INIT,
   POWERUP_TYPES,
 } from './constants.js'
@@ -25,7 +25,7 @@ import {
   calcPaddleBounce, wallBounceX, ceilingBounce,
   normaliseVelocity, enforceMinVertical,
 } from './physics.js'
-import { circleRect, collisionFace, ballLost, ballHitsPaddle, ballHitsBrick } from './collision.js'
+import { collisionFace, ballLost, ballHitsPaddle, ballHitsBrick } from './collision.js'
 import { addBrickScore, tickCombo, resetCombo } from './score.js'
 import { loseLife, isGameOver } from './lives.js'
 import { tickPaddlePowerup, movePaddleByKey, movePaddleToPointer, applyWidePaddle } from './paddle.js'
